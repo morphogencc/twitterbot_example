@@ -1,10 +1,12 @@
 #!/use/bin/env python
 #
-# search_tweets.py
+# dump_tweets.py
 # nathan lachenmyer
 # 2017 March
 #
-# Usage: python search_tweets.py [search query] [number of results]
+# Usage: python dump_tweets.py [twitter username]
+
+import time
 import sys
 import json
 import tweepy
@@ -24,19 +26,27 @@ ACCESS_SECRET = config_data['access_token_secret']
 # Using Application Authorization so we get a higher rate limit of 450 queries / 15 minutes
 auth = tweepy.AppAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 api = tweepy.API(auth, wait_on_rate_limit=True,wait_on_rate_limit_notify=True)
-
+    
 if (not api):
     print ("ERROR : Problem connecting to API")
 
-search_query = sys.argv[1]
+username = sys.argv[1]
 
-searched_tweets = []
-last_id = -1
+alltweets = []	
+new_tweets = api.user_timeline(screen_name=username,count=450)
+alltweets.extend(new_tweets)
+oldest = alltweets[-1].id - 1
 
-if len(sys.argv) >= 3:
-    max_tweets = int(sys.argv[2])
-else:
-    max_tweets = 25
+while len(new_tweets) > 0:
+        print("Retrieving tweets before {}".format(oldest))
+        new_tweets = api.user_timeline(screen_name=username,count=450,max_id=oldest)
+        alltweets.extend(new_tweets)
+        oldest = alltweets[-1].id - 1
+        print("...{0} tweets downloaded so far".format(len(alltweets)))
 
-for tweet in tweepy.Cursor(api.search,q=search_query).items(max_tweets):
-    print("{0} tweeted {1}".format(tweet.user.screen_name, tweet.text.encode('utf-8')))
+outtweets = [[tweet.id_str, tweet.created_at, "{0}".format(tweet.text)] for tweet in alltweets]
+
+#write the csv	
+with open("{}_tweets.txt".format(username), 'w', encoding="utf-8") as f:
+    for tweet in outtweets:
+        f.write("{0}\n".format(tweet[2]))
