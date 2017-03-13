@@ -5,6 +5,9 @@
 # 2017 March
 #
 # Usage: python dump_tweets.py [twitter username]
+#
+# If you want to grab more than 3200 tweets, use https://github.com/bpb27/twitter_scraping
+#
 
 import time
 import sys
